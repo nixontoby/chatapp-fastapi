@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Application</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Arial', sans-serif;
+            background-color: #000; /* Black background */
+            color: lightgreen; /* Green text */
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        
+        header {
+            background-color: #111; /* Darker black for header */
+            padding: 1rem;
+            text-align: center;
+            border-bottom: 2px solid lightgreen;
+        }
+        
+        header h1 {
+            margin: 0;
+            font-size: 2rem;
+            color: lightgreen;
+        }
+        
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 1rem;
+        }
+        
+        #chat-window {
+            flex: 1;
+            overflow-y: auto;
+            border-radius: 8px;
+            padding: 1rem;
+            background-color: #111;
+        }
+        
+        #messages {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            padding: 1rem;
+            overflow-y: auto;
+            height: 400px; /* Adjust as needed */
+            background-color: #111;
+            border-radius: 8px;
+        }
+
+        .message {
+            max-width: 60%;
+            padding: 0.5rem 1rem;
+            border-radius: 10px;
+            color: lightgreen;
+            word-wrap: break-word;
+        }
+
+        .sent {
+            align-self: flex-end;
+            background-color: #0a0; /* Green for sent messages */
+        }
+
+        .received {
+            align-self: flex-start;
+            background-color: #222; /* Darker for received messages */
+        }
+        
+        #message-input {
+            margin-top: 1rem;
+        }
+        
+        #chat-form {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        #message {
+            flex: 1;
+            padding: 0.5rem;
+            border: 2px solid lightgreen;
+            border-radius: 4px;
+            background-color: #111;
+            color: lightgreen;
+        }
+        
+        #message::placeholder {
+            color: #555;
+        }
+        
+        button {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 4px;
+            background-color: lightgreen;
+            color: #000;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        
+        button:hover {
+            background-color: #0a0;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 0.5rem;
+            background-color: #111;
+            border-top: 2px solid lightgreen;
+            color: lightgreen;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1 id="user-heading">User: {{ user_id }}</h1>
+    </header>
+    <main>
+        <section id="chat-window">
+            <div id="messages">
+                <!-- Chat messages will appear here -->
+            </div>
+        </section>
+        <section id="message-input">
+            <form id="chat-form">
+                <input type="text" id="message" placeholder="Type your message..." required>
+                <button type="submit">Send</button>
+            </form>
+        </section>
+    </main>
+    <footer>
+        <p>&copy; 2025 Chat Application</p>
+    </footer>
+     <!-- Link to your JavaScript file -->
+    <script>
+        const chatForm = document.getElementById("chat-form");
+        const messageInput = document.getElementById("message");
+        const messagesDiv = document.getElementById("messages");
+
+        const userId = "{{ user_id }}"; // User ID passed from the backend
+        const socket = new WebSocket(`ws://${window.location.host}/ws/${userId}`);
+
+        // Handle incoming messages
+        socket.onmessage = (event) => {
+            const message = event.data;
+            const messageDiv = document.createElement("div");
+            messageDiv.classList.add("message");
+            messageDiv.classList.add(message.startsWith(userId) ? "sent" : "received"); // Sent or received
+            messageDiv.textContent = message;
+            messagesDiv.appendChild(messageDiv);
+        };
+
+        socket.onopen = () => {
+            console.log("WebSocket connection established");
+        };
+
+        socket.onclose = () => {
+            console.log("WebSocket connection closed");
+        };
+
+        // Send a message
+        chatForm.addEventListener("submit", (event) => {
+            event.preventDefault();
+            const message = messageInput.value;
+
+            console.log("Sending message:", message); // Debug log
+
+            // Send the message via WebSocket
+            socket.send(message);
+
+            // Display the message immediately
+            const messageDiv = document.createElement("div");
+            messageDiv.classList.add("message", "sent");
+            messageDiv.textContent = `You: ${message}`;
+            messagesDiv.appendChild(messageDiv);
+
+            messageInput.value = ""; // Clear the input field
+        });
+
+        async function loadMessages() {
+            console.log(`Fetching messages for User ID: ${userId}`); // Debug log
+            const response = await fetch(`/admin/messages/${userId}`);
+            const messages = await response.json();
+            console.log("Fetched messages:", messages); // Debug log
+
+            messages.forEach(msg => {
+                const messageDiv = document.createElement("div");
+                messageDiv.classList.add("message");
+                messageDiv.classList.add(msg.is_admin ? "sent" : "received"); // Sent by admin or received by user
+                messageDiv.textContent = msg.message;
+                messagesDiv.appendChild(messageDiv);
+            });
+        }
+    </script>
+</body>
+</html>
+``` 
