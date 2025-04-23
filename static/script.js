@@ -4,7 +4,8 @@ const messageInput = document.getElementById("message");
 const messagesDiv = document.getElementById("messages");
 
 // Connect to WebSocket
-const socket = new WebSocket(`ws://${window.location.host}/ws/${userId}`);
+const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+const socket = new WebSocket(`${protocol}://${window.location.host}/ws/${userId}`);
 
 // Handle incoming messages
 socket.onmessage = (event) => {
